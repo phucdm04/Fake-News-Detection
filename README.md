@@ -22,6 +22,17 @@ The pipeline includes: Fine-tuning (that's all 😁)
 
 As LLMs have been pretrained, we didn't perform a pre-processed pipeline. Instead, we were putting raw data through the tokenizer and configuring parameters for fine-tuning on the dataset.
 
+Models used in the experiments:
+
+**bert-base-uncased:** 12 layers, 768 hidden size, 12 attention heads, ~110M parameters. Pretrained on lower-cased English.
+
+**xlnet-base-cased:** 12 layers, 768 hidden size, 12 attention heads, ~117M parameters. Pretrained on cased English using permutation-based autoregressive modeling.
+
+The parameters of BERT and XLNet is shown below:
+|`epochs`|`learning_rate`|`max_length`|`batch_size`|
+|--|--|--|--|
+| 3 | 2e-5 | 64 | 8 |
+
 ## DL Pipeline
 Pipeline of Deep Learning includes: Pre-processing -> Embedding -> Training -> Evaluation
 
