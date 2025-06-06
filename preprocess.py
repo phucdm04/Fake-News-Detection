@@ -37,6 +37,9 @@ def prepare_dataset() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     if 'Unnamed: 0' in full_data.columns:
         full_data.drop(columns=['Unnamed: 0'], inplace=True)
 
+    full_data.drop_duplicates(inplace=True)
+    full_data.dropna(subset=["text"], inplace=True)
+
     full_data = full_data.sample(frac=1, random_state=42).reset_index(drop=True)  # Shuffle the dataset
     train_data, test_data = train_test_split(full_data, test_size=0.2, random_state=42)
     train_data, val_data = train_test_split(train_data, test_size=0.25, random_state=42, stratify=train_data["labels"])  # 20% of the original data for validation
