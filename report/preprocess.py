@@ -10,6 +10,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from tqdm import tqdm
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
+from sklearn.utils.validation import check_is_fitted
 import pickle
 from typing import List, Tuple, Optional, Union    
 import os
@@ -49,7 +50,7 @@ def prepare_dataset() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
 
 def process_text(text:str) -> List[str]:
     """
-    Preprocess the text data for machine learning or deep learning models.
+    Preprocess the single text data for machine learning or deep learning models.
     Args:
         text (str): The input text to preprocess.
     Returns:
@@ -67,16 +68,16 @@ def process_text(text:str) -> List[str]:
 
     return tokens
 
-def preprocess_data(data: List[str], merge:bool = True) -> Union[List[str], List[List[str]]]:
+def preprocess_data(data: pd.Series, merge:bool = True) -> Union[List[str], List[List[str]]]:
     """
     Preprocess the text data in the DataFrame.
     Args:
         data: The input is the list text data
     Returns:
         List of List of string or List of string: the token or sentences
-    """
-    if not isinstance(data, List[str]):
-        raise ValueError("Input data must be a list of strings.")
+    # """
+    # if not isinstance(data, pd.Series):
+    #     raise ValueError("Input data must be a pandas Series")
     processed_data = []
     for text in tqdm(data, desc="Preprocessing texts"):
         processed_tokens = process_text(text)
@@ -98,6 +99,7 @@ def process_and_save_token(data: pd.Series, path: str) -> List[List[str]]:
 
     return processed_texts
 
+
 def process_for_ml(texts: List[str], vectorizer = None) -> Tuple[TfidfVectorizer, List[List[float]]] :
     """
     Embedding using TF-IDF
@@ -109,10 +111,13 @@ def process_for_ml(texts: List[str], vectorizer = None) -> Tuple[TfidfVectorizer
     """
 
     if vectorizer is None:
-        vectorizer = TfidfVectorizer(max_features=1821, ngram_range=(1, 1))  # Limit to 256 features
+        vectorizer = TfidfVectorizer(max_features=1821, ngram_range=(1, 1))  # Limit to 1821 features
+        vectorizer.fit(texts)
+
     
-    matrix = vectorizer.fit_transform(texts)
+    matrix = vectorizer.transform(texts)
     return vectorizer, [row.toarray().flatten().tolist() for row in matrix]
+
 
 def process_for_dl(texts, tokenizer=None):
     """
@@ -148,16 +153,19 @@ def main():
 
     # Preprocess for ml
     vectorizer, ml_train_vectors = process_for_ml(train_texts)
+
+    
+
     _, ml_test_vectors = process_for_ml(test_texts, vectorizer)
     _, ml_val_vectors = process_for_ml(val_texts, vectorizer)
 
+    # save data
     with open('./dataset/ml/train_text.pkl', 'wb') as f:
         pickle.dump(ml_train_vectors, f)
     with open('./dataset/ml/val_text.pkl', 'wb') as f:
         pickle.dump(ml_val_vectors, f)
     with open('./dataset/ml/test_text.pkl', 'wb') as f:
         pickle.dump(ml_test_vectors, f)
-
     with open('./dataset/ml/train_labels.pkl', 'wb') as f:
         pickle.dump(train_data['labels'].values, f)
     with open('./dataset/ml/val_labels.pkl', 'wb') as f:
@@ -165,26 +173,32 @@ def main():
     with open('./dataset/ml/test_labels.pkl', 'wb') as f:
         pickle.dump(test_data['labels'].values, f)
 
+    # save vectorizer
+    with open("./vectorizer.pkl", "wb") as f:
+        pickle.dump(vectorizer, f)
 
-    # processed for dl
-    train_tokenizer, dl_train_sequences = process_for_dl(train_texts)
-    _, dl_val_sequences = process_for_dl(val_texts, train_tokenizer)
-    _, dl_test_sequences = process_for_dl(test_texts, train_tokenizer)
 
-    with open('./dataset/dl/train_text.pkl', 'wb') as f:
-        pickle.dump(dl_train_sequences, f)
-    with open('./dataset/dl/val_text.pkl', 'wb') as f:
-        pickle.dump(dl_val_sequences, f)
-    with open('./dataset/dl/test_text.pkl', 'wb') as f:
-        pickle.dump(dl_test_sequences, f)
+    # # processed for dl
+    # tokenizer, dl_train_sequences = process_for_dl(train_texts)
+    # _, dl_val_sequences = process_for_dl(val_texts, tokenizer)
+    # _, dl_test_sequences = process_for_dl(test_texts, tokenizer)
 
-    with open('./dataset/dl/train_labels.pkl', 'wb') as f:
-        pickle.dump(train_data['labels'].values, f)
-    with open('./dataset/dl/val_labels.pkl', 'wb') as f:
-        pickle.dump(val_data['labels'].values, f)
-    with open('./dataset/dl/test_labels.pkl', 'wb') as f:
-        pickle.dump(test_data['labels'].values, f)
-    
+    # with open('./dataset/dl/train_text.pkl', 'wb') as f:
+    #     pickle.dump(dl_train_sequences, f)
+    # with open('./dataset/dl/val_text.pkl', 'wb') as f:
+    #     pickle.dump(dl_val_sequences, f)
+    # with open('./dataset/dl/test_text.pkl', 'wb') as f:
+    #     pickle.dump(dl_test_sequences, f)
+    # with open('./dataset/dl/train_labels.pkl', 'wb') as f:
+    #     pickle.dump(train_data['labels'].values, f)
+    # with open('./dataset/dl/val_labels.pkl', 'wb') as f:
+    #     pickle.dump(val_data['labels'].values, f)
+    # with open('./dataset/dl/test_labels.pkl', 'wb') as f:
+    #     pickle.dump(test_data['labels'].values, f)
+
+    # # save tokenizer
+    # with open("./tokenizer.pkl", "wb") as f:
+    #     pickle.dump(tokenizer, f)
 
 if __name__ == "__main__":
     main()
